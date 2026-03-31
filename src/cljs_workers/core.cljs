@@ -24,20 +24,24 @@
   (complement worker?))
 
 (defn create-one
-  [script]
-  (js/Worker. script))
+  ([script]
+   (js/Worker. script))
+  ([script opts]
+   (js/Worker. script opts)))
 
 (defn create-pool
   ([]
    (create-pool 5))
-
   ([count]
    (create-pool count "js/compiled/workers.js"))
-
   ([count script]
+   (create-pool count script nil))
+  ([count script opts]
    (let [workers (chan count)]
      (dotimes [_ count]
-       (put! workers (create-one script)))
+       (if opts
+         (put! workers (create-one script opts))
+         (put! workers (create-one script))))
      {:workers workers, :count count})))
 
 (defn- do-request!
