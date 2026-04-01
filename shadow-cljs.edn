@@ -1,0 +1,18 @@
+{:source-paths ["src"]
+
+ :builds
+ {:app
+  {:target :browser
+   :output-dir "target/main/public/main/cljs-out"
+   :asset-path "/main/cljs-out"
+   :modules {:base   {:entries []}
+             :main   {:entries [cljs-workers.core]
+                      :depends-on #{:base}
+                      :exports {init cljs-workers.core/init}}
+             :worker {:entries [cljs-workers.worker]
+                      :web-worker true
+                      :depends-on #{:base}}}
+
+   :compiler-options
+   {:optimizations
+    :simple}}}}
