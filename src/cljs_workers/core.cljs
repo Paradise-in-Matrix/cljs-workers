@@ -78,22 +78,23 @@
   (-> (.-data event)
       (js->clj :keywordize-keys true)))
 
+
 (defn do-with-worker!
   [worker {:keys [handler arguments transfer] :as request}]
-  (let [result
-        (promise-chan)
+  (let [result      (promise-chan)
+        put-result! (partial put! result)]
 
-        put-result!
-        (partial put! result)]
-
-    (->> (comp put-result! handle-response!)
-         (aset worker "onmessage"))
+    (aset worker "onmessage"
+          (fn [event]
+            (let [res (handle-response! event)]
+              (when-not (:stream-event? res)
+                (put-result! res)
+                (aset worker "onmessage" nil)))))
 
     (try
       (do-request! worker request)
       (catch js/Object e
         (put! result {:state :error, :error e})))
-
     result))
 
 (defn do-with-pool!
@@ -126,7 +127,6 @@
 
 (defn do-for-pool!
   [pool {:keys [handler arguments transfer] :as request}]
-  ;; WATCHOUT: We want an promise-chan!
   (let [result* (promise-chan)]
     (go
       (let [{:keys [workers count]}
