@@ -64,6 +64,12 @@
            clj->js
            (.postMessage js/self)))))
 
+
+(defn stream! [data]
+  (let [message (clj->js {:stream-event? true
+                          :data data})]
+    (.postMessage js/self message)))
+
 (defn bootstrap
   []
   (aset js/self "onmessage" handle-request!))
