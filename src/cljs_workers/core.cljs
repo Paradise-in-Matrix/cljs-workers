@@ -23,11 +23,25 @@
 (def main?
   (complement worker?))
 
+
 (defn create-one
   ([script]
    (js/Worker. script))
   ([script opts]
-   (js/Worker. script opts)))
+   (let [is-clj-map? (map? opts)
+         worker-opts (if is-clj-map? (:worker-opts opts) opts)
+         worker      (if worker-opts
+                       (js/Worker. script worker-opts)
+                       (js/Worker. script))]
+
+     (when (and is-clj-map? (:on-stream opts))
+       (.addEventListener worker "message"
+                          (fn [event]
+                            (let [res (-> (.-data event) (js->clj :keywordize-keys true))]
+                              (when (:stream-event? res)
+                                ((:on-stream opts) (:data res)))))))
+     worker)))
+
 
 (defn create-pool
   ([]
